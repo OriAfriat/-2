@@ -1,0 +1,191 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מערכת 2 - מכירות לפי תאריך</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Arial', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            color: #333;
+            line-height: 1.6;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            padding: 40px 20px;
+            background: linear-gradient(45deg, #6b7280, #4b5563);
+            color: white;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        header h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        .section {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            margin-bottom: 30px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .section h2 {
+            font-size: 1.8em;
+            color: #1f2937;
+            margin-bottom: 15px;
+        }
+
+        .section p {
+            font-size: 1.1em;
+            color: #4b5563;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 25px;
+            font-size: 1.1em;
+            font-weight: bold;
+            text-align: center;
+            text-decoration: none;
+            color: white;
+            background: linear-gradient(45deg, #3b82f6, #1d4ed8);
+            border-radius: 8px;
+            transition: transform 0.2s, box-shadow 0.2s;
+            cursor: pointer;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: #4b5563;
+            font-size: 0.9em;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 768px) {
+            header h1 {
+                font-size: 1.8em;
+            }
+
+            .section h2 {
+                font-size: 1.5em;
+            }
+
+            .btn {
+                font-size: 1em;
+                padding: 12px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>מערכת 2 - מכירות לפי תאריך</h1>
+    </header>
+
+    <div class="container">
+        <section class="section">
+            <h2>אודות המערכת</h2>
+            <p>
+                מערכת זו מציגה ניתוח של מכירות הנקניקיות לפי תאריכים. הוויזואליזציה מאפשרת זיהוי מגמות עונתיות, ימים עם מכירות גבוהות או נמוכות, ומסייעת בתכנון מבצעים ומלאי בהתאם לנתונים.
+            </p>
+            <a href="index.html" class="btn">חזרה לדף הראשי</a>
+        </section>
+
+        <section class="section" id="tableau">
+            <h2>ויזואליזציה של מכירות לפי תאריך 📅📊</h2>
+            <p>גלו את מגמות המכירות שלנו לאורך זמן - מתי הלקוחות הכי אוהבים את הנקניקיות שלנו?</p>
+            <script type="module" src="https://public.tableau.com/javascripts/api/tableau.embedding.3.latest.min.js"></script>
+            <tableau-viz 
+                id="tableauViz2"
+                src="https://public.tableau.com/views/Dashboard2_17463631126100/Dashboard2"
+                toolbar="bottom"
+                hide-tabs
+                width="100%"
+                height="800">
+            </tableau-viz>
+        </section>
+    </div>
+
+    <footer>
+        <p>© 2025 מערכת ויזואליזציה למכירת נקניקיות. כל הזכויות שמורות.</p>
+    </footer>
+
+    <script>
+        // Button hover effect enhancement
+        document.querySelectorAll('.btn').forEach(button => {
+            button.addEventListener('mouseover', () => {
+                button.style.background = 'linear-gradient(45deg, #1d4ed8, #3b82f6)';
+            });
+            button.addEventListener('mouseout', () => {
+                button.style.background = 'linear-gradient(45deg, #3b82f6, #1d4ed8)';
+            });
+        });
+    </script>
+</body>
+</html>
